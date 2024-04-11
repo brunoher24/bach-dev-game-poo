@@ -30,3 +30,20 @@ img {
   width: 100%;
   height: 100%;
 }
+
+.playable-animated {
+  animation: blinking 2s ease-in-out infinite;
+}
+
+@keyframes blinking {
+  0% {
+    background-color: rgba(33, 183, 175, 1);
+  }
+  50% {
+    background-color: rgba(33, 183, 175, 0.3);
+  }
+
+  100% {
+    background-color: rgba(33, 183, 175, 1);
+  }
+}

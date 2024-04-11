@@ -115,6 +115,29 @@ class Board {
       square.innerHTML = "<img src='" + item.image + "' alt=''/>";
       this.allSquares[x][y].occupiedBy = item;
     }
+
+    if (item.type === "player") {
+      this.handleAvailableSquaresAroundPlayer({ x, y });
+    }
+  }
+
+  handleAvailableSquaresAroundPlayer({ x, y }) {
+    const prevColumn = this.allSquares[x - 1];
+    const nextColumn = this.allSquares[x + 1];
+    if (prevColumn && !prevColumn[y].occupiedBy) { // case gauche existe et est innocupée
+      this.mainCtnr.querySelector(`#_${x - 1}-${y}`).className = "square playable-animated";
+    }
+    if (nextColumn && !nextColumn[y].occupiedBy) { // case droite existe et est innocupée
+      this.mainCtnr.querySelector(`#_${x + 1}-${y}`).className = "square playable-animated";
+    }
+
+    if (this.allSquares[x][y - 1] && !this.allSquares[x][y - 1].occupiedBy) { // case haut existe et est innocupée
+      this.mainCtnr.querySelector(`#_${x}-${y - 1}`).className = "square playable-animated";
+    }
+
+    if (this.allSquares[x][y + 1] && !this.allSquares[x][y + 1].occupiedBy) { // case bas existe et est innocupée
+      this.mainCtnr.querySelector(`#_${x}-${y + 1}`).className = "square playable-animated";
+    }
   }
 
   disposeItems(items) {
@@ -151,6 +174,6 @@ const weapons = [
   new Weapon('Dague', './assets/weapons/knife.png'),
 ];
 
-board.disposeItems(players);
 board.disposeItems(obstacles);
 board.disposeItems(weapons);
+board.disposeItems(players);
