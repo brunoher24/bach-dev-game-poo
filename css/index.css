@@ -20,6 +20,7 @@ img {
 
 #game-board .square {
   position: relative;
+  border: 1px solid;
 }
 
 #game-board .square > img {

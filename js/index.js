@@ -10,6 +10,11 @@
 // créer 3 classes : Player, Weapon, Obstacle, implémenter les propriétés qui semblent pertinentes
 // pour les disposer ensuite sur le plateau de jeu
 
+// consigne 4
+// gérer le déplacement des joueurs : faire apparaitre en surbrillance les cases autour
+// des joueurs sur lesquelles ils peuvent se déplacer (la case doit être vide ou avoir une arme)
+// les joueurs peuvent se déplacer sur 4 cases : en haut en bas à droite ou à gauche
+
 
 function randomIntFromInterval(min, max) { // min and max included 
   return Math.floor(Math.random() * (max - min + 1) + min)
@@ -62,13 +67,14 @@ class Weapon {
 }
 
 class Board {
-  NUM_OF_OBSTACLES = 20;
   constructor(columns, squares) {
     this.columns = columns;
     this.squares = squares;
     this.mainCtnr = document.querySelector("#game-board");
     this.allSquares = new Array(this.columns).fill(null)
-      .map((_, x) => new Array(this.squares).fill(null).map((_, y) => ({ x, y, occupiedBy: null, isOccupied: false })));
+      .map((_, x) => new Array(this.squares)
+        .fill(null)
+        .map((_, y) => ({ x, y, occupiedBy: null })));
     this.draw();
   }
 
@@ -100,25 +106,22 @@ class Board {
   fillSquare(item, newX, newY) {
     const { x, y } = item.position;
     if (newX && newY) {
-      this.mainCtnr.querySelector(`#_${item.x}-${item.y}`).innerHTML = "";
+      this.mainCtnr.querySelector(`#_${x}-${y}`).innerHTML = "";
       this.mainCtnr.querySelector(`#_${newX}-${newY}`).innerHTML = "<img src='" + item.image + "' alt=''/>";
       this.allSquares[x][y].occupiedBy = null;
-      this.allSquares[x][y].isOccupied = false;
       this.allSquares[newX][newY].occupiedBy = item;
-      this.allSquares[newX][newY].isOccupied = true;
     } else {
       const square = this.mainCtnr.querySelector(`#_${x}-${y}`);
       square.innerHTML = "<img src='" + item.image + "' alt=''/>";
       this.allSquares[x][y].occupiedBy = item;
-      this.allSquares[x][y].isOccupied = true;
     }
   }
 
   disposeItems(items) {
     items.forEach(item => {
-      const num = item.type === "obstacle" ? this.NUM_OF_OBSTACLES : 1;
+      const num = item.num ? item.num : 1;
       for (let i = 0; i < num; i++) {
-        const availableSquares = this.allSquares.slice(1, -1).map(squares => squares.slice(1, -1).filter(square => !square.isOccupied));
+        const availableSquares = this.allSquares.slice(1, -1).map(squares => squares.slice(1, -1).filter(square => !square.occupiedBy));
         const randX = item.type === "player" ? randomIntFromInterval(0, this.columns - 1) : randomIntFromInterval(0, this.columns - 3);
         const randY = item.type === "player" ? item.number === 1 ? 0 : this.squares - 1 : randomIntFromInterval(0, availableSquares[randX].length - 1);
         const position = item.type === "player" ? { x: randX, y: randY } : { x: availableSquares[randX][randY].x, y: availableSquares[randX][randY].y };
@@ -129,6 +132,7 @@ class Board {
 
   canFillSquare(x, y) { }
 }
+
 
 board = new Board(15, 15);
 
