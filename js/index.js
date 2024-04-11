@@ -15,6 +15,11 @@
 // des joueurs sur lesquelles ils peuvent se déplacer (la case doit être vide ou avoir une arme)
 // les joueurs peuvent se déplacer sur 4 cases : en haut en bas à droite ou à gauche
 
+// consigne 5
+// gérer le déplacement des joueurs au clique sur les cases disponibles autour d'eux
+// quand un joueur se déplace sur une nouvelle case, la case précédente est "vidée" de sa présence
+// les cases disponibles qui clignotent sont réinitialisées
+
 
 function randomIntFromInterval(min, max) { // min and max included 
   return Math.floor(Math.random() * (max - min + 1) + min)
@@ -34,6 +39,11 @@ class Player {
   displayOnBoard({ x, y }) {
     this.position = { x, y };
     board.fillSquare(this);
+  }
+
+  move({ x, y }) {
+    board.fillSquare(this, x, y);
+    this.position = { x, y };
   }
 }
 
@@ -74,8 +84,18 @@ class Board {
     this.allSquares = new Array(this.columns).fill(null)
       .map((_, x) => new Array(this.squares)
         .fill(null)
-        .map((_, y) => ({ x, y, occupiedBy: null })));
+        .map((_, y) => ({ x, y, occupiedBy: null, playableBy: null })));
     this.draw();
+    this.currentPlayer;
+  }
+
+  setCurrentPlayer(player) {
+    this.currentPlayer = player;
+    this.handleAvailableSquaresAroundPlayer();
+  }
+
+  switchTurn() {
+    this.currentPlayer.number === 1 ? this.setCurrentPlayer(players[1]) : this.setCurrentPlayer(players[0]);
   }
 
   draw() {
@@ -85,9 +105,14 @@ class Board {
     }
     this.mainCtnr.innerHTML = innerHTML;
     this.mainCtnr.querySelectorAll(".square").forEach(square => {
-      square.addEventListener("click", e => {
-        const { x, y } = e.target.dataset;
-        console.log({ x, y });
+      square.addEventListener("click", () => {
+        const x = Number(square.dataset.x);
+        const y = Number(square.dataset.y);
+        const currentSquare = this.allSquares[x][y];
+        if (currentSquare.playableBy === this.currentPlayer.number) {
+          this.currentPlayer.move({ x, y });
+          this.switchTurn();
+        }
       });
     });
   }
@@ -96,7 +121,7 @@ class Board {
     let innerHTML = "";
     innerHTML += `<div class="column">`;
     for (let y = 0; y < this.squares; y++) {
-      const size = (100 / this.squares - 1) + "vh";
+      const size = Math.floor(100 / this.squares - 1) + "vh";
       innerHTML += `<div data-x=${x} data-y=${y} id="_${x}-${y}" class="square" style="width:${size};height:${size}"></div>`;
     }
     innerHTML += `</div>`;
@@ -115,28 +140,35 @@ class Board {
       square.innerHTML = "<img src='" + item.image + "' alt=''/>";
       this.allSquares[x][y].occupiedBy = item;
     }
-
-    if (item.type === "player") {
-      this.handleAvailableSquaresAroundPlayer({ x, y });
-    }
   }
 
-  handleAvailableSquaresAroundPlayer({ x, y }) {
+  handleAvailableSquaresAroundPlayer() {
+    const { x, y } = this.currentPlayer.position;
+
+    this.mainCtnr.querySelectorAll(".playable-animated").forEach(square => {
+      square.className = "square";
+      this.allSquares[square.dataset.x][square.dataset.y].playableBy = null;
+    });
+
     const prevColumn = this.allSquares[x - 1];
     const nextColumn = this.allSquares[x + 1];
     if (prevColumn && !prevColumn[y].occupiedBy) { // case gauche existe et est innocupée
       this.mainCtnr.querySelector(`#_${x - 1}-${y}`).className = "square playable-animated";
+      this.allSquares[x - 1][y].playableBy = this.currentPlayer.number;
     }
     if (nextColumn && !nextColumn[y].occupiedBy) { // case droite existe et est innocupée
       this.mainCtnr.querySelector(`#_${x + 1}-${y}`).className = "square playable-animated";
+      this.allSquares[x + 1][y].playableBy = this.currentPlayer.number;
     }
 
     if (this.allSquares[x][y - 1] && !this.allSquares[x][y - 1].occupiedBy) { // case haut existe et est innocupée
       this.mainCtnr.querySelector(`#_${x}-${y - 1}`).className = "square playable-animated";
+      this.allSquares[x][y - 1].playableBy = this.currentPlayer.number;
     }
 
     if (this.allSquares[x][y + 1] && !this.allSquares[x][y + 1].occupiedBy) { // case bas existe et est innocupée
       this.mainCtnr.querySelector(`#_${x}-${y + 1}`).className = "square playable-animated";
+      this.allSquares[x][y + 1].playableBy = this.currentPlayer.number;
     }
   }
 
@@ -177,3 +209,4 @@ const weapons = [
 board.disposeItems(obstacles);
 board.disposeItems(weapons);
 board.disposeItems(players);
+board.setCurrentPlayer(players[randomIntFromInterval(0, 1)]);
