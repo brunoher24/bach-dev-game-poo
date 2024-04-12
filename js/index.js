@@ -70,11 +70,26 @@ class Player extends BoardItem {
     super(name, image, "player");
     this.number = number;
     this.weapon = new Weapon("crayon", "./assets/weapons/pencil.png");
+    this.health = 100;
   }
 
-  move({ x, y }) {
+  moves({ x, y }) {
     board.fillSquare(this, x, y);
     this.position = { x, y };
+  }
+
+  attacks(otherPlayer) {
+    const dodge = Math.random() > 0.5;
+    if (dodge) {
+      console.log(`${otherPlayer.name} a évité l'attaque de ${this.name} !`);
+    } else {
+      otherPlayer.health -= this.weapon.damage;
+      let txt = `${this.name} fait perdre ${this.weapon.damage} points de vie à ${otherPlayer.name} ! `;
+      if (otherPlayer.health > 0) {
+        txt += `Il ne lui reste plus que ${otherPlayer.health} point${otherPlayer.health > 1 ? "s" : ""} de vie...`;
+      }
+      console.log(txt);
+    }
   }
 }
 
@@ -97,6 +112,7 @@ class Board {
     this.columns = columns;
     this.squares = squares;
     this.mainCtnr = document.querySelector("#game-board");
+    this.fightHasStarted = false;
     this.allSquares = new Array(this.columns).fill(null)
       .map((_, x) => new Array(this.squares)
         .fill(null)
@@ -106,11 +122,12 @@ class Board {
   }
 
   displayPlayerInfos(player) {
-    const ctnr = document.querySelector(`#player${player.number}-infos`);
+    const ctnr = document.querySelector(`.player${player.number}-infos`);
     ctnr.innerHTML = `<img src="${player.image}" />
     <span>${player.name}</span>
-    <span>Arme : ${player.weapon.name}</span>
-    <span>Dégats : ${player.weapon.damage}</span>`;
+    <span><span>Arme :</span> ${player.weapon.name}</span>
+    <span>Dégats : ${player.weapon.damage}</span>
+    <span><span>Santé :</span> ${player.health}</span>`;
   }
 
   setCurrentPlayer(player) {
@@ -130,26 +147,29 @@ class Board {
     this.mainCtnr.innerHTML = innerHTML;
     this.mainCtnr.querySelectorAll(".square").forEach(square => {
       square.addEventListener("click", () => {
+        if (this.fightHasStarted) return;
         const x = Number(square.dataset.x);
         const y = Number(square.dataset.y);
         const currentSquare = this.allSquares[x][y];
         if (currentSquare.playableBy === this.currentPlayer.number) {
-          this.currentPlayer.move({ x, y });
-          this.switchTurn();
+          this.currentPlayer.moves({ x, y });
+          if (!this.fightHasStarted) {
+            this.switchTurn();
+          }
         }
       });
     });
   }
 
   drawColumn(x) {
-    this.allSquares.push([]);
-    const lastIndex = this.allSquares.length - 1;
+    // this.allSquares.push([]);
+    // const lastIndex = this.allSquares.length - 1;
     let innerHTML = "";
-    innerHTML += `<div class="column">`;
+    innerHTML += `<div class="column"> `;
     for (let y = 0; y < this.squares; y++) {
       const size = Math.floor(100 / this.squares - 1) + "vh";
-      innerHTML += `<div data-x=${x} data-y=${y} id="_${x}-${y}" class="square" style="width:${size};height:${size}"></div>`;
-      this.allSquares[lastIndex].push({ x, y, occupiedBy: null })
+      innerHTML += `<div data-x=${x} data-y=${y} id="_${x}-${y}" class="square" style="width:${size};height:${size}" ></div>`;
+      // this.allSquares[lastIndex].push({ x, y, occupiedBy: null })
     }
     innerHTML += `</div>`;
     return innerHTML;
@@ -165,9 +185,42 @@ class Board {
     this.displayPlayerInfos(this.currentPlayer);
   }
 
-  fillSquare(item, newX, newY) {
+  startFight(player1, player2) {
+    this.fightHasStarted = true;
+    let attacking = player1, defending = player2;
+    const interval = window.setInterval(() => {
+      attacking.attacks(defending);
+      if (defending.health <= 0) {
+        console.log(`${attacking.name} a gagné.`);
+        window.clearInterval(interval);
+      } else {
+        if (attacking.number === player1.number) {
+          defending = player1;
+          attacking = player2;
+        } else {
+          defending = player2;
+          attacking = player1;
+        }
+      }
+    }, 3000);
+  }
+
+  startFightIfPlayersAreClose(player1X, player1Y) {
+    const otherPlayer = this.currentPlayer.number === 1 ? players[1] : players[0];
+    const player2X = otherPlayer.position.x;
+    const player2Y = otherPlayer.position.y;
+
+    if ((player1X === player2X && [-1, 1].includes(player1Y - player2Y)) ||
+      (player1Y === player2Y && [-1, 1].includes(player1X - player2X))) {
+      this.clearUpPlayableSquares();
+      this.displayFightSquares(player1X, player1Y, player2X, player2Y);
+      this.startFight(this.currentPlayer, otherPlayer);
+    }
+  }
+
+  fillSquare(item, newX = -1, newY = -1) {
     const { x, y } = item.position;
-    if (newX && newY) {
+    if (newX > -1 && newY > -1) {
       if (this.squareIsOccupiedByWeapon(newX, newY)) {
         this.playerTakesNewWeaponAndLeavesOldOne(newX, newY);
       }
@@ -183,6 +236,8 @@ class Board {
 
       this.mainCtnr.querySelector(`#_${newX}-${newY}`).innerHTML = "<img src='" + item.image + "' alt=''/>";
       this.allSquares[newX][newY].occupiedBy = item;
+
+      this.startFightIfPlayersAreClose(newX, newY);
     } else {
       const square = this.mainCtnr.querySelector(`#_${x}-${y}`);
       square.innerHTML = "<img src='" + item.image + "' alt=''/>";
@@ -190,13 +245,22 @@ class Board {
     }
   }
 
-  handleAvailableSquaresAroundPlayer() {
-    const { x, y } = this.currentPlayer.position;
-
+  clearUpPlayableSquares() {
     this.mainCtnr.querySelectorAll(".playable-animated").forEach(square => {
       square.className = "square";
       this.allSquares[square.dataset.x][square.dataset.y].playableBy = null;
     });
+  }
+
+  displayFightSquares(x1, y1, x2, y2) {
+    this.mainCtnr.querySelector(`#_${x1}-${y1}`).className = "square animated-fight-square";
+    this.mainCtnr.querySelector(`#_${x2}-${y2}`).className = "square animated-fight-square";
+  }
+
+  handleAvailableSquaresAroundPlayer() {
+    const { x, y } = this.currentPlayer.position;
+
+    this.clearUpPlayableSquares();
 
     const prevColumn = this.allSquares[x - 1];
     const nextColumn = this.allSquares[x + 1];
@@ -224,20 +288,18 @@ class Board {
     items.forEach(item => {
       const num = item.num ? item.num : 1;
       for (let i = 0; i < num; i++) {
-        const availableSquares = this.allSquares.slice(1, -1).map(squares => squares.slice(1, -1).filter(square => !square.occupiedBy));
-        const randX = item.type === "player" ? randomIntFromInterval(0, this.columns - 1) : randomIntFromInterval(0, this.columns - 3);
+        const availableSquares = this.allSquares.slice(1, -1).map(squares => squares.slice(1, -1).filter(square => !square.occupiedBy)).filter(column => column.length > 0);
+        const randX = item.type === "player" ? randomIntFromInterval(0, this.columns - 1) : randomIntFromInterval(0, availableSquares.length - 3);
         const randY = item.type === "player" ? item.number === 1 ? 0 : this.squares - 1 : randomIntFromInterval(0, availableSquares[randX].length - 1);
         const position = item.type === "player" ? { x: randX, y: randY } : { x: availableSquares[randX][randY].x, y: availableSquares[randX][randY].y };
         item.displayOnBoard(position);
       }
     });
   }
-
-  canFillSquare(x, y) { }
 }
 
 
-board = new Board(15, 15);
+board = new Board(7, 7);
 
 const players = [
   new Player('Michel', './assets/players/knight-1.png', 1),
@@ -245,7 +307,7 @@ const players = [
 ];
 
 const obstacles = [
-  new Obstacle('Rocher', './assets/obstacles/rock.png', 30)
+  new Obstacle('Rocher', './assets/obstacles/rock.png', 10)
 ];
 
 const weapons = [
@@ -260,4 +322,3 @@ board.disposeItems(players);
 board.setCurrentPlayer(players[randomIntFromInterval(0, 1)]);
 board.displayPlayerInfos(players[0]);
 board.displayPlayerInfos(players[1]);
-
