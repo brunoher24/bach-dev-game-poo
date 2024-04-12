@@ -20,10 +20,18 @@
 // quand un joueur se déplace sur une nouvelle case, la case précédente est "vidée" de sa présence
 // les cases disponibles qui clignotent sont réinitialisées
 
-
 // consigne 6
 // créer une classe "parente" BoardItem de laquelle héritent les 3 classes Player, Obstacle & Weapon
 // lien utile : https://www.w3schools.com/jsref/jsref_class_extends.asp
+
+// consigne 7
+// donner par défault à chaque joueur une même arme
+// ajouter une propriété "damage" à la classe weapon 
+// gérer le déplacement d'un joueur sur une arme :
+// la case adjacente au joueur contenant une arme est cliquable
+// au click sur cette case, le joueur "échange" son arme avec celle de la case
+// lorsque le joueur quite cette case, il laisse son ancienne arme sur cette case
+
 
 function randomIntFromInterval(min, max) { // min and max included 
   return Math.floor(Math.random() * (max - min + 1) + min)
