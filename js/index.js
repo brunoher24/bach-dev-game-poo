@@ -21,6 +21,10 @@
 // les cases disponibles qui clignotent sont réinitialisées
 
 
+// consigne 6
+// créer une classe "parente" BoardItem de laquelle héritent les 3 classes Player, Obstacle & Weapon
+// lien utile : https://www.w3schools.com/jsref/jsref_class_extends.asp
+
 function randomIntFromInterval(min, max) { // min and max included 
   return Math.floor(Math.random() * (max - min + 1) + min)
 }
@@ -109,6 +113,7 @@ class Board {
         const x = Number(square.dataset.x);
         const y = Number(square.dataset.y);
         const currentSquare = this.allSquares[x][y];
+        console.log(currentSquare);
         if (currentSquare.playableBy === this.currentPlayer.number) {
           this.currentPlayer.move({ x, y });
           this.switchTurn();
@@ -118,11 +123,14 @@ class Board {
   }
 
   drawColumn(x) {
+    this.allSquares.push([]);
+    const lastIndex = this.allSquares.length - 1;
     let innerHTML = "";
     innerHTML += `<div class="column">`;
     for (let y = 0; y < this.squares; y++) {
       const size = Math.floor(100 / this.squares - 1) + "vh";
       innerHTML += `<div data-x=${x} data-y=${y} id="_${x}-${y}" class="square" style="width:${size};height:${size}"></div>`;
+      this.allSquares[lastIndex].push({ x, y, occupiedBy: null })
     }
     innerHTML += `</div>`;
     return innerHTML;
