@@ -31,18 +31,24 @@ function randomIntFromInterval(min, max) { // min and max included
 
 let board;
 
-class Player {
-  constructor(name, image, number) {
+class BoardItem {
+  constructor(name, image, type) {
     this.name = name;
     this.image = image;
+    this.type = type;
     this.position = { x: -1, y: -1 };
-    this.type = "player";
-    this.number = number;
   }
 
   displayOnBoard({ x, y }) {
     this.position = { x, y };
     board.fillSquare(this);
+  }
+}
+
+class Player extends BoardItem {
+  constructor(name, image, number) {
+    super(name, image, "player");
+    this.number = number;
   }
 
   move({ x, y }) {
@@ -51,32 +57,16 @@ class Player {
   }
 }
 
-class Obstacle {
+class Obstacle extends BoardItem {
   constructor(name, image, num) {
-    this.name = name;
-    this.image = image;
-    this.position = { x: -1, y: -1 };
-    this.type = "obstacle";
+    super(name, image, "obstacle");
     this.num = num;
-  }
-
-  displayOnBoard({ x, y }) {
-    this.position = { x, y };
-    board.fillSquare(this);
   }
 }
 
-class Weapon {
+class Weapon extends BoardItem {
   constructor(name, image) {
-    this.name = name;
-    this.image = image;
-    this.position = { x: -1, y: -1 };
-    this.type = "weapon";
-  }
-
-  displayOnBoard({ x, y }) {
-    this.position = { x, y };
-    board.fillSquare(this);
+    super(name, image, "weapon");
   }
 }
 
@@ -113,7 +103,6 @@ class Board {
         const x = Number(square.dataset.x);
         const y = Number(square.dataset.y);
         const currentSquare = this.allSquares[x][y];
-        console.log(currentSquare);
         if (currentSquare.playableBy === this.currentPlayer.number) {
           this.currentPlayer.move({ x, y });
           this.switchTurn();
