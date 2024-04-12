@@ -13,6 +13,13 @@ img {
   object-position: center;
 }
 
+#player1-infos img,
+#player2-infos img {
+  width: 5vh;
+  border: 1px solid;
+  background-color: orange;
+}
+
 #game-board {
   display: flex;
   box-shadow: 1px 1px 4px silver;

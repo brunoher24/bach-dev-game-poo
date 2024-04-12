@@ -57,6 +57,7 @@ class Player extends BoardItem {
   constructor(name, image, number) {
     super(name, image, "player");
     this.number = number;
+    this.weapon = new Weapon("crayon", "./assets/weapons/pencil.png");
   }
 
   move({ x, y }) {
@@ -73,8 +74,9 @@ class Obstacle extends BoardItem {
 }
 
 class Weapon extends BoardItem {
-  constructor(name, image) {
+  constructor(name, image, damage = 5) {
     super(name, image, "weapon");
+    this.damage = damage;
   }
 }
 
@@ -89,6 +91,14 @@ class Board {
         .map((_, y) => ({ x, y, occupiedBy: null, playableBy: null })));
     this.draw();
     this.currentPlayer;
+  }
+
+  displayPlayerInfos(player) {
+    const ctnr = document.querySelector(`#player${player.number}-infos`);
+    ctnr.innerHTML = `<img src="${player.image}" />
+    <span>${player.name}</span>
+    <span>Arme : ${player.weapon.name}</span>
+    <span>Dégats : ${player.weapon.damage}</span>`;
   }
 
   setCurrentPlayer(player) {
@@ -133,12 +143,33 @@ class Board {
     return innerHTML;
   }
 
+  squareIsOccupiedByWeapon(x, y) {
+    return this.allSquares[x][y].occupiedBy && this.allSquares[x][y].occupiedBy.type === "weapon";
+  }
+
+  playerTakesNewWeaponAndLeavesOldOne(x, y) {
+    this.allSquares[x][y].transitionWeapon = this.currentPlayer.weapon;
+    this.currentPlayer.weapon = this.allSquares[x][y].occupiedBy;
+    this.displayPlayerInfos(this.currentPlayer);
+  }
+
   fillSquare(item, newX, newY) {
     const { x, y } = item.position;
     if (newX && newY) {
-      this.mainCtnr.querySelector(`#_${x}-${y}`).innerHTML = "";
+      if (this.squareIsOccupiedByWeapon(newX, newY)) {
+        this.playerTakesNewWeaponAndLeavesOldOne(newX, newY);
+      }
+      const transitionWeapon = this.allSquares[x][y].transitionWeapon;
+      if (transitionWeapon) {
+        this.mainCtnr.querySelector(`#_${x}-${y}`).innerHTML = "<img src='" + this.allSquares[x][y].transitionWeapon.image + "' alt=''/>";
+        this.allSquares[x][y].occupiedBy = transitionWeapon;
+        this.allSquares[x][y].transitionWeapon = null;
+      } else {
+        this.mainCtnr.querySelector(`#_${x}-${y}`).innerHTML = "";
+        this.allSquares[x][y].occupiedBy = null;
+      }
+
       this.mainCtnr.querySelector(`#_${newX}-${newY}`).innerHTML = "<img src='" + item.image + "' alt=''/>";
-      this.allSquares[x][y].occupiedBy = null;
       this.allSquares[newX][newY].occupiedBy = item;
     } else {
       const square = this.mainCtnr.querySelector(`#_${x}-${y}`);
@@ -157,21 +188,21 @@ class Board {
 
     const prevColumn = this.allSquares[x - 1];
     const nextColumn = this.allSquares[x + 1];
-    if (prevColumn && !prevColumn[y].occupiedBy) { // case gauche existe et est innocupée
+    if (prevColumn && (!prevColumn[y].occupiedBy || prevColumn[y].occupiedBy.type === "weapon")) { // case gauche existe et est innocupée
       this.mainCtnr.querySelector(`#_${x - 1}-${y}`).className = "square playable-animated";
       this.allSquares[x - 1][y].playableBy = this.currentPlayer.number;
     }
-    if (nextColumn && !nextColumn[y].occupiedBy) { // case droite existe et est innocupée
+    if (nextColumn && (!nextColumn[y].occupiedBy || nextColumn[y].occupiedBy.type === "weapon")) { // case droite existe et est innocupée
       this.mainCtnr.querySelector(`#_${x + 1}-${y}`).className = "square playable-animated";
       this.allSquares[x + 1][y].playableBy = this.currentPlayer.number;
     }
 
-    if (this.allSquares[x][y - 1] && !this.allSquares[x][y - 1].occupiedBy) { // case haut existe et est innocupée
+    if (this.allSquares[x][y - 1] && (!this.allSquares[x][y - 1].occupiedBy || this.allSquares[x][y - 1].occupiedBy.type === "weapon")) { // case haut existe et est innocupée
       this.mainCtnr.querySelector(`#_${x}-${y - 1}`).className = "square playable-animated";
       this.allSquares[x][y - 1].playableBy = this.currentPlayer.number;
     }
 
-    if (this.allSquares[x][y + 1] && !this.allSquares[x][y + 1].occupiedBy) { // case bas existe et est innocupée
+    if (this.allSquares[x][y + 1] && (!this.allSquares[x][y + 1].occupiedBy || this.allSquares[x][y + 1].occupiedBy.type === "weapon")) { // case bas existe et est innocupée
       this.mainCtnr.querySelector(`#_${x}-${y + 1}`).className = "square playable-animated";
       this.allSquares[x][y + 1].playableBy = this.currentPlayer.number;
     }
@@ -206,12 +237,15 @@ const obstacles = [
 ];
 
 const weapons = [
-  new Weapon('Pistolet laser', './assets/weapons/laser-gun.png'),
-  new Weapon('Epée', './assets/weapons/sword.png'),
-  new Weapon('Dague', './assets/weapons/knife.png'),
+  new Weapon('Pistolet laser', './assets/weapons/laser-gun.png', 30),
+  new Weapon('Epée', './assets/weapons/sword.png', 20),
+  new Weapon('Dague', './assets/weapons/knife.png', 10),
 ];
 
 board.disposeItems(obstacles);
 board.disposeItems(weapons);
 board.disposeItems(players);
 board.setCurrentPlayer(players[randomIntFromInterval(0, 1)]);
+board.displayPlayerInfos(players[0]);
+board.displayPlayerInfos(players[1]);
+
