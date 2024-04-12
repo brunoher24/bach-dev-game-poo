@@ -32,6 +32,18 @@
 // au click sur cette case, le joueur "échange" son arme avec celle de la case
 // lorsque le joueur quite cette case, il laisse son ancienne arme sur cette case
 
+// consigne 8 
+// rajouter une jauge de vie aux joueurs
+// gestion du combat :
+// quand les 2 joueurs arrivent côte à côte ( à 1 seule case d'écart ),
+// un duel à mort s'engage entre eux.
+// toutes les 3 secondes, un coup est porté par chaque joueur, tour à tour
+// de façon aléatoire, le joueur qui reçoit le coup peut l'esquiver
+// sinon, il subit un dommage équivalant aux dégats de l'arme qui l'a frappé
+// lorsque l'un des 2 joueurs arrive à zéro de jauge de vie, la partie se 
+// termine par la victoire de l'autre joueur
+// Lors de chaque "mouvement", un message supplémentaire s'affiche en bas de page 
+// pour que l'on puisse suivre le déroulement du combat
 
 function randomIntFromInterval(min, max) { // min and max included 
   return Math.floor(Math.random() * (max - min + 1) + min)
