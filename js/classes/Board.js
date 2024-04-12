@@ -97,6 +97,7 @@ export default class Board {
     let attacking = player1, defending = player2;
     const interval = window.setInterval(() => {
       attacking.attacks(defending);
+      this.displayPlayerInfos(defending);
       if (defending.health <= 0) {
         console.log(`${attacking.name} a gagné.`);
         window.clearInterval(interval);

@@ -66,5 +66,5 @@ const weapons = [
   new Weapon('Dague', './assets/weapons/knife.png', 10),
 ];
 
-const board = new Board(7, 7, obstacles, weapons, players);
+const board = new Board(14, 14, obstacles, weapons, players);
 board.startNewGame();
